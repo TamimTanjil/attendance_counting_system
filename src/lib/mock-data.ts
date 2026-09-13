@@ -73,7 +73,7 @@ export const mockUsers: LabUser[] = NAMES.map((name, i) => ({
   id: `u_${String(i + 1).padStart(3, "0")}`,
   studentId: `SWE-22-${String(101 + i)}`,
   name,
-  department: DEPARTMENTS[i % DEPARTMENTS.length],
+  department: DEPARTMENTS[i % DEPARTMENTS.length]!,
   email: `${name.toLowerCase().replace(/\s+/g, ".")}@lab.edu`,
   enrolledPhotos: 3 + (i % 3),
   active: i % 9 !== 0,
@@ -95,8 +95,8 @@ export const mockCheckIns: CheckIn[] = [
   { idx: 9, min: 47, conf: 0.99, status: "present" },
 ].map((c, i) => ({
   id: `c_${i}`,
-  studentId: mockUsers[c.idx].studentId,
-  name: mockUsers[c.idx].name,
+  studentId: mockUsers[c.idx]!.studentId,
+  name: mockUsers[c.idx]!.name,
   timestamp: timeAgo(c.min),
   confidence: c.conf,
   status: c.status as AttendanceStatus,
@@ -140,7 +140,7 @@ export const weeklyTrend = [
 ];
 
 export const monthlyTrend = Array.from({ length: 12 }, (_, i) => ({
-  label: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i],
+  label: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i]!,
   rate: 72 + ((i * 13) % 23),
 }));
 

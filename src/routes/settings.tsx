@@ -130,7 +130,7 @@ function SettingsPage() {
               max={0.95}
               step={0.01}
               value={[form.confidenceThreshold]}
-              onValueChange={([v]) => set("confidenceThreshold", v)}
+              onValueChange={([v]) => set("confidenceThreshold", v ?? form.confidenceThreshold)}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0.50 · permissive</span>

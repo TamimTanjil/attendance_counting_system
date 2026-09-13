@@ -69,7 +69,7 @@ const tooltipStyle = {
 };
 
 function LogsPage() {
-  const [filters, setFilters] = useState<LogFilters>({
+  const [filters, setFilters] = useState<Required<LogFilters>>({
     from: "2026-09-07",
     to: "2026-09-13",
     status: "all",
@@ -92,7 +92,10 @@ function LogsPage() {
 
   function exportPdf() {
     const win = window.open("", "_blank");
-    if (!win) return toast.error("Allow pop-ups to export PDF.");
+    if (!win) {
+      toast.error("Allow pop-ups to export PDF.");
+      return;
+    }
     win.document.write(`<html><head><title>Attendance ${filters.from} — ${filters.to}</title>
       <style>body{font-family:system-ui;padding:24px;color:#111}h1{font-size:18px}
       table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
@@ -174,7 +177,7 @@ function LogsPage() {
             <Label className="text-xs text-muted-foreground">Status</Label>
             <Select
               value={filters.status}
-              onValueChange={(v) => setFilters((f) => ({ ...f, status: v as LogFilters["status"] }))}
+              onValueChange={(v) => setFilters((f) => ({ ...f, status: v as Required<LogFilters>["status"] }))}
             >
               <SelectTrigger>
                 <SelectValue />
