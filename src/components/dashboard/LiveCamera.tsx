@@ -1,22 +1,20 @@
-import { useEffect, useState } from "react";
 import { Camera, ShieldAlert, Wifi } from "lucide-react";
-import { mockDetections } from "@/lib/mock-data";
+import { useLiveDetections } from "@/hooks/useLiveDetections";
+import { CAMERA_STREAM_URL } from "@/services/api";
 import { cn } from "@/lib/utils";
 
-export function LiveCamera({ threshold = 0.78 }: { threshold?: number }) {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2400);
-    return () => clearInterval(id);
-  }, []);
-
-  const detections = mockDetections.map((d, i) => ({
-    ...d,
-    x: d.x + Math.sin((tick + i) * 0.9) * 2.2,
-    y: d.y + Math.cos((tick + i) * 0.7) * 1.6,
-    confidence: Math.min(0.99, Math.max(0.35, d.confidence + Math.sin(tick + i) * 0.02)),
-  }));
+export function LiveCamera({
+  threshold = 0.78,
+  rtspUrl,
+  fps,
+  latencyMs,
+}: {
+  threshold?: number;
+  rtspUrl?: string;
+  fps?: number;
+  latencyMs?: number;
+}) {
+  const { detections, connected, live } = useLiveDetections();
 
   const alert = detections.find((d) => !d.known || d.confidence < threshold);
 
@@ -28,17 +26,31 @@ export function LiveCamera({ threshold = 0.78 }: { threshold?: number }) {
           <h2 className="text-sm font-semibold">Lab Entrance · Camera 01</h2>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5 text-primary">
-            <span className="live-dot size-2 rounded-full bg-primary" /> LIVE
+          <span className={cn("flex items-center gap-1.5", live && !connected ? "text-warning" : "text-primary")}>
+            <span
+              className={cn(
+                "live-dot size-2 rounded-full",
+                live && !connected ? "bg-warning" : "bg-primary",
+              )}
+            />
+            {live ? (connected ? "LIVE" : "RECONNECTING") : "DEMO"}
           </span>
           <span className="flex items-center gap-1.5">
-            <Wifi className="size-3.5" /> 24 fps · 118 ms
+            <Wifi className="size-3.5" /> {fps ?? 24} fps · {latencyMs ?? 118} ms
           </span>
         </div>
       </header>
 
       <div className="scan-line relative aspect-video w-full bg-[radial-gradient(circle_at_50%_40%,var(--color-accent),var(--color-background))]">
-        <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:48px_48px]" />
+        {CAMERA_STREAM_URL ? (
+          <img
+            src={CAMERA_STREAM_URL}
+            alt="Live camera stream of the lab entrance"
+            className="absolute inset-0 size-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:48px_48px]" />
+        )}
 
         {detections.map((d) => {
           const recognized = d.known && d.confidence >= threshold;
@@ -46,7 +58,7 @@ export function LiveCamera({ threshold = 0.78 }: { threshold?: number }) {
             <div
               key={d.id}
               className={cn(
-                "absolute rounded-md border-2 transition-all duration-1000 ease-out",
+                "absolute rounded-md border-2 transition-all duration-500 ease-out",
                 recognized ? "border-primary shadow-[0_0_24px_-4px_var(--color-primary)]" : "border-destructive",
               )}
               style={{ left: `${d.x}%`, top: `${d.y}%`, width: `${d.w}%`, height: `${d.h}%` }}
@@ -64,7 +76,7 @@ export function LiveCamera({ threshold = 0.78 }: { threshold?: number }) {
         })}
 
         <div className="absolute bottom-3 left-3 rounded-md bg-background/70 px-2 py-1 font-mono text-[11px] text-muted-foreground backdrop-blur">
-          rtsp://192.168.0.42:554/lab-entrance · faces: {detections.length}
+          {rtspUrl ?? "rtsp://192.168.0.42:554/lab-entrance"} · faces: {detections.length}
         </div>
       </div>
 
