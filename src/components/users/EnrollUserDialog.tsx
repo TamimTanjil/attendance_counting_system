@@ -20,21 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createUser } from "@/services/api";
+import { enrollUser } from "@/services/api";
 
 const ANGLES = ["Front", "Left 30°", "Right 30°", "Up", "Down"];
 
 export function EnrollUserDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<Record<string, { url: string; file: File }>>({});
   const [form, setForm] = useState({ name: "", studentId: "", department: "CSE", email: "" });
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   function pickPhoto(angle: string, file?: File) {
     if (!file) return;
-    setPhotos((p) => ({ ...p, [angle]: URL.createObjectURL(file) }));
+    setPhotos((p) => ({ ...p, [angle]: { url: URL.createObjectURL(file), file } }));
   }
 
   async function submit() {
@@ -48,7 +48,10 @@ export function EnrollUserDialog({ onCreated }: { onCreated: () => void }) {
     }
     setSaving(true);
     try {
-      await createUser({ ...form, photoCount: Object.keys(photos).length });
+      await enrollUser(
+        form,
+        Object.entries(photos).map(([angle, p]) => ({ angle, file: p.file })),
+      );
       toast.success(`${form.name} enrolled — embeddings queued for training.`);
       setForm({ name: "", studentId: "", department: "CSE", email: "" });
       setPhotos({});
@@ -117,7 +120,7 @@ export function EnrollUserDialog({ onCreated }: { onCreated: () => void }) {
                 >
                   {photos[angle] ? (
                     <>
-                      <img src={photos[angle]} alt={angle} className="absolute inset-0 size-full object-cover" />
+                      <img src={photos[angle]!.url} alt={angle} className="absolute inset-0 size-full object-cover" />
                       <button
                         type="button"
                         onClick={(e) => {

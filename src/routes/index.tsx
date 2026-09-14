@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LiveCamera } from "@/components/dashboard/LiveCamera";
 import { RecentCheckIns } from "@/components/dashboard/RecentCheckIns";
+import { BadgeScanner } from "@/components/dashboard/BadgeScanner";
 import { getCheckIns, getSettings, getStats } from "@/services/api";
 import { hourlyFlow } from "@/lib/mock-data";
 import { AreaChart, Area, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -60,7 +61,15 @@ function Overview() {
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <LiveCamera threshold={settings.data?.confidenceThreshold ?? 0.78} />
+        <div className="grid gap-4">
+          <LiveCamera
+            threshold={settings.data?.confidenceThreshold ?? 0.78}
+            {...(settings.data?.rtspUrl ? { rtspUrl: settings.data.rtspUrl } : {})}
+            {...(s?.fps !== undefined ? { fps: s.fps } : {})}
+            {...(s?.latencyMs !== undefined ? { latencyMs: s.latencyMs } : {})}
+          />
+          <BadgeScanner />
+        </div>
         <RecentCheckIns items={checkIns.data ?? []} loading={checkIns.isLoading} />
       </div>
 

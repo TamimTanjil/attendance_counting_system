@@ -28,6 +28,16 @@ switch from mock JSON to `fetch()` calls.
 | GET    | `/api/settings`           | `SystemSettings`                                                                    |
 | PUT    | `/api/settings`           | body `SystemSettings` → `SystemSettings`                                            |
 | POST   | `/api/camera/test`        | body `{ rtspUrl }` → `{ ok, message }`                                              |
+| POST   | `/api/attendance/badge`   | body `{ badgeId }` → `CheckIn` (QR badge check-in; 404 when unknown)                |
+| GET    | `/api/camera/stream`      | MJPEG (`multipart/x-mixed-replace`) — rendered directly in the dashboard            |
+| WS     | `/ws/detections`          | pushes `{ detections: Detection[], checkIn?: CheckIn }` per frame                   |
+
+`Detection` is `{ id, name, confidence, x, y, w, h, known }` with `x/y/w/h` as
+percentages of the frame, so boxes line up over the MJPEG image.
+
+Enrollment (`POST /api/users`) is sent as `multipart/form-data` when
+`VITE_API_BASE_URL` is set: text fields `name`, `studentId`, `department`,
+`email`, an `angles` JSON array, and one `photos` file part per angle.
 
 Types live in `src/lib/mock-data.ts` — mirror them with Pydantic models.
 

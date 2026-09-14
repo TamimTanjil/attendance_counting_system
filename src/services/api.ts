@@ -19,6 +19,14 @@ import {
 export const API_BASE_URL = import.meta.env["VITE_API_BASE_URL"] ?? "";
 export const USE_MOCK = !API_BASE_URL;
 
+/** MJPEG stream served by the backend (`/api/camera/stream`). */
+export const CAMERA_STREAM_URL = API_BASE_URL ? `${API_BASE_URL}/api/camera/stream` : "";
+
+/** WebSocket pushing `{ detections, checkIn? }` frames (`/ws/detections`). */
+export const DETECTIONS_WS_URL = API_BASE_URL
+  ? `${API_BASE_URL.replace(/^http/, "ws")}/ws/detections`
+  : "";
+
 const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms));
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -95,6 +103,50 @@ export async function createUser(payload: NewUserPayload): Promise<LabUser> {
   };
   users = [user, ...users];
   return user;
+}
+
+/**
+ * Enrollment with real image files — posts multipart/form-data so the backend
+ * can compute one embedding per angle. Falls back to the mock handler offline.
+ */
+export async function enrollUser(
+  payload: Omit<NewUserPayload, "photoCount">,
+  photos: { angle: string; file: File }[],
+): Promise<LabUser> {
+  if (USE_MOCK) return createUser({ ...payload, photoCount: photos.length });
+
+  const body = new FormData();
+  body.append("name", payload.name);
+  body.append("studentId", payload.studentId);
+  body.append("department", payload.department);
+  body.append("email", payload.email);
+  body.append("angles", JSON.stringify(photos.map((p) => p.angle)));
+  photos.forEach((p) => body.append("photos", p.file, `${p.angle}-${p.file.name}`));
+
+  const res = await fetch(`${API_BASE_URL}/api/users`, { method: "POST", body });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return (await res.json()) as LabUser;
+}
+
+/** QR badge check-in — the scanner sends the decoded badge ID here. */
+export async function checkInByBadge(badgeId: string): Promise<CheckIn> {
+  if (!USE_MOCK) {
+    return request<CheckIn>("/api/attendance/badge", {
+      method: "POST",
+      body: JSON.stringify({ badgeId }),
+    });
+  }
+  await delay(300);
+  const user = users.find((u) => u.studentId.toLowerCase() === badgeId.trim().toLowerCase());
+  if (!user) throw new Error(`No student registered for badge ${badgeId}`);
+  return {
+    id: `c_qr_${Date.now()}`,
+    studentId: user.studentId,
+    name: user.name,
+    timestamp: new Date().toISOString(),
+    confidence: 1,
+    status: "present",
+  };
 }
 
 export async function deleteUser(id: string): Promise<void> {
