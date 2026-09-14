@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createUser } from "@/services/api";
+import { enrollUser } from "@/services/api";
 
 const ANGLES = ["Front", "Left 30°", "Right 30°", "Up", "Down"];
 
